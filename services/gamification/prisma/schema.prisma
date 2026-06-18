@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  displayName  String
+  isActive     Boolean  @default(true)
+  level        Int      @default(1)
+  xpTotal      Int      @default(0)
+  coinBalance  Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  xpLedger    XpLedger[]
+  coinLedger  CoinLedger[]
+  streaks     Streak[]
+  userBadges  UserBadge[]
+  missions    UserMission[]
+
+  @@index([email])
+}
+
+model XpLedger {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    Int
+  source    String
+  balanceAfter Int
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, createdAt])
+}
+
+model CoinLedger {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    Int
+  source    String
+  balanceAfter Int
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, createdAt])
+}
+
+enum StreakType {
+  daily
+  conversation
+  match
+  referral
+}
+
+model Streak {
+  id           String     @id @default(uuid()) @db.Uuid
+  userId       String     @db.Uuid
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         StreakType
+  currentCount Int        @default(0)
+  longestCount Int        @default(0)
+  lastActivity Date
+  expiresAt    DateTime
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([userId, type])
+  @@index([userId])
+}
+
+model Badge {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique
+  category    String
+  description String
+  imageUrl    String?
+  criteria    Json?
+  createdAt   DateTime @default(now())
+
+  userBadges UserBadge[]
+}
+
+model UserBadge {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId   String   @db.Uuid
+  badge     Badge    @relation(fields: [badgeId], references: [id])
+  earnedAt  DateTime @default(now())
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+}
+
+model Mission {
+  id          String   @id @default(uuid()) @db.Uuid
+  title       String
+  description String
+  xpReward    Int      @default(0)
+  coinReward  Int      @default(0)
+  requirements Json?
+  refreshType String
+  startDate   DateTime?
+  endDate     DateTime?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  userMissions UserMission[]
+}
+
+model UserMission {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @db.Uuid
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  missionId   String   @db.Uuid
+  mission     Mission  @relation(fields: [missionId], references: [id])
+  progress    Int      @default(0)
+  completed   Boolean  @default(false)
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, missionId])
+  @@index([userId])
+}

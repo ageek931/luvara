@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique
+  displayName String
+  isActive  Boolean  @default(true)
+  isBanned  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  reportsFiled  Report[]    @relation("ReportedBy")
+  reportsAgainst Report[]   @relation("ReportedUser")
+  moderationActions ModerationAction[]
+
+  @@index([email])
+}
+
+enum ReportCategory {
+  fake_profile
+  harassment
+  explicit_content
+  underage
+  spam
+  safety_concern
+  other
+}
+
+enum ReportStatus {
+  pending
+  investigating
+  resolved
+  dismissed
+}
+
+model Report {
+  id               String         @id @default(uuid()) @db.Uuid
+  reporterId       String         @db.Uuid
+  reporter         User           @relation("ReportedBy", fields: [reporterId], references: [id])
+  reportedId       String         @db.Uuid
+  reported         User           @relation("ReportedUser", fields: [reportedId], references: [id])
+  category         ReportCategory
+  description      String?        @db.Text
+  evidenceSnapshot Json?
+  status           ReportStatus   @default(pending)
+  moderatorId      String?
+  moderatorNote    String?        @db.Text
+  createdAt        DateTime       @default(now())
+  resolvedAt       DateTime?
+
+  @@index([status])
+  @@index([reportedId])
+  @@index([createdAt])
+}
+
+enum ModerationActionType {
+  warn
+  restrict
+  suspend
+  ban
+  appeal_granted
+}
+
+model ModerationAction {
+  id          String               @id @default(uuid()) @db.Uuid
+  userId      String               @db.Uuid
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  moderatorId String
+  action      ModerationActionType
+  reason      String?              @db.Text
+  durationDays Int?
+  createdAt   DateTime             @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}

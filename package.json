@@ -1,0 +1,30 @@
+{
+  "name": "luvara",
+  "private": true,
+  "version": "1.0.0",
+  "description": "LUVARA - Premium Hybrid Dating Platform",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "clean": "turbo clean",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "db:migrate": "cd services/auth && npx prisma migrate dev",
+    "db:seed": "cd services/auth && npx prisma db seed",
+    "docker:dev": "docker compose -f infra/docker/docker-compose.yml up -d",
+    "docker:build": "docker compose -f infra/docker/docker-compose.yml build",
+    "typecheck": "turbo typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "prettier": "^3.2.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.1.0"
+}

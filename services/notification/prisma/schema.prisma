@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  displayName  String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  notifications Notification[]
+  pushTokens    PushToken[]
+
+  @@index([email])
+}
+
+enum NotificationChannel {
+  in_app
+  push
+  email
+  sms
+}
+
+model Notification {
+  id             String               @id @default(uuid()) @db.Uuid
+  userId         String               @db.Uuid
+  user           User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type           String
+  channel        NotificationChannel  @default(in_app)
+  title          String
+  body           String               @db.Text
+  data           Json?
+  readAt         DateTime?
+  createdAt      DateTime             @default(now())
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+}
+
+model PushToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String
+  platform  String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, token])
+  @@index([token])
+}

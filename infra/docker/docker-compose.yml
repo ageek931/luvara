@@ -1,0 +1,228 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: luvara
+      POSTGRES_PASSWORD: luvara_dev
+      POSTGRES_DB: luvara
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U luvara"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: luvara
+      RABBITMQ_DEFAULT_PASS: luvara_dev
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  auth-service:
+    build:
+      context: ../..
+      dockerfile: services/auth/Dockerfile
+    ports:
+      - "4001:4001"
+    environment:
+      PORT: 4001
+      DATABASE_URL: postgresql://luvara:luvara_dev@postgres:5432/luvara
+      JWT_SECRET: dev-jwt-secret-key-at-least-32-chars-long!!
+      CORS_ORIGIN: http://localhost:3000
+      NODE_ENV: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "npx prisma migrate deploy && npx prisma db seed && npm run dev"
+
+  profile-service:
+    build:
+      context: ../..
+      dockerfile: services/profile/Dockerfile
+    ports:
+      - "4001": "4001"
+    environment:
+      PORT: 4001
+      DATABASE_URL: postgresql://luvara:luvara_dev@postgres:5432/luvara
+      JWT_SECRET: dev-jwt-secret-key-at-least-32-chars-long!!
+      CORS_ORIGIN: http://localhost:3000
+      NODE_ENV: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  discovery-service:
+    build:
+      context: ../..
+      dockerfile: services/discovery/Dockerfile
+    ports:
+      - "4002:4002"
+    environment:
+      PORT: 4002
+      DATABASE_URL: postgresql://luvara:luvara_dev@postgres:5432/luvara
+      JWT_SECRET: dev-jwt-secret-key-at-least-32-chars-long!!
+      CORS_ORIGIN: http://localhost:3000
+      NODE_ENV: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  match-service:
+    build:
+      context: ../..
+      dockerfile: services/match/Dockerfile
+    ports:
+      - "4003:4003"
+    environment:
+      PORT: 4003
+      DATABASE_URL: postgresql://luvara:luvara_dev@postgres:5432/luvara
+      JWT_SECRET: dev-jwt-secret-key-at-least-32-chars-long!!
+      CORS_ORIGIN: http://localhost:3000
+      NODE_ENV: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  chat-service:
+    build:
+      context: ../..
+      dockerfile: services/chat/Dockerfile
+    ports:
+      - "4004:4004"
+    environment:
+      PORT: 4004
+      DATABASE_URL: postgresql://luvara:luvara_dev@postgres:5432/luvara
+      JWT_SECRET: dev-jwt-secret-key-at-least-32-chars-long!!
+      CORS_ORIGIN: http://localhost:3000
+      NODE_ENV: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  notification-service:
+    build:
+      context: ../..
+      dockerfile: services/notification/Dockerfile
+    ports:
+      - "4005:4005"
+    environment:
+      PORT: 4005
+      DATABASE_URL: postgresql://luvara:luvara_dev@postgres:5432/luvara
+      JWT_SECRET: dev-jwt-secret-key-at-least-32-chars-long!!
+      CORS_ORIGIN: http://localhost:3000
+      NODE_ENV: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  payment-service:
+    build:
+      context: ../..
+      dockerfile: services/payment/Dockerfile
+    ports:
+      - "4006:4006"
+    environment:
+      PORT: 4006
+      DATABASE_URL: postgresql://luvara:luvara_dev@postgres:5432/luvara
+      JWT_SECRET: dev-jwt-secret-key-at-least-32-chars-long!!
+      CORS_ORIGIN: http://localhost:3000
+      NODE_ENV: development
+      STRIPE_SECRET_KEY: sk_test_placeholder
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  gamification-service:
+    build:
+      context: ../..
+      dockerfile: services/gamification/Dockerfile
+    ports:
+      - "4008:4008"
+    environment:
+      PORT: 4008
+      DATABASE_URL: postgresql://luvara:luvara_dev@postgres:5432/luvara
+      JWT_SECRET: dev-jwt-secret-key-at-least-32-chars-long!!
+      CORS_ORIGIN: http://localhost:3000
+      NODE_ENV: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  moderation-service:
+    build:
+      context: ../..
+      dockerfile: services/moderation/Dockerfile
+    ports:
+      - "4009:4009"
+    environment:
+      PORT: 4009
+      DATABASE_URL: postgresql://luvara:luvara_dev@postgres:5432/luvara
+      JWT_SECRET: dev-jwt-secret-key-at-least-32-chars-long!!
+      CORS_ORIGIN: http://localhost:3000
+      NODE_ENV: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  admin-service:
+    build:
+      context: ../..
+      dockerfile: services/admin/Dockerfile
+    ports:
+      - "4010:4010"
+    environment:
+      PORT: 4010
+      JWT_SECRET: dev-jwt-secret-key-at-least-32-chars-long!!
+      ADMIN_API_KEY: dev-admin-key-change-in-production
+      CORS_ORIGIN: http://localhost:3000
+      NODE_ENV: development
+      DATABASE_URL: postgresql://luvara:luvara_dev@postgres:5432/luvara
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web-app:
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      NODE_ENV: development
+    depends_on:
+      - auth-service
+      - profile-service
+      - discovery-service
+      - match-service
+      - chat-service
+      - notification-service
+      - payment-service
+      - gamification-service
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:

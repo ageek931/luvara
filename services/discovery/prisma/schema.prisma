@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  displayName  String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  swipesMade   Swipe[]  @relation("SwipesMade")
+  swipesReceived Swipe[] @relation("SwipesReceived")
+
+  @@index([email])
+}
+
+model Profile {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @unique @db.Uuid
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName     String
+  birthday        DateTime? @db.Date
+  gender          String?
+  orientation     String?
+  bio             String?  @db.Text
+  intent          String?
+  valuesTags      String[]
+  interests       String[]
+  height          Int?
+  education       String?
+  occupation      String?
+  locationLat     Float?
+  locationLng     Float?
+  locationCity    String?
+  locationCountry String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  photos Photo[]
+
+  @@index([locationCity])
+  @@index([intent])
+  @@index([gender])
+}
+
+model Photo {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  url       String
+  thumbnailUrl String
+  order     Int      @default(0)
+  isPrimary Boolean  @default(false)
+  moderationStatus String @default("approved")
+  createdAt DateTime @default(now())
+
+  profile Profile? @relation(fields: [userId], references: [userId])
+
+  @@index([userId])
+}
+
+model Prompt {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @db.Uuid
+  promptText   String
+  responseText String   @db.Text
+  category     String
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  profile Profile? @relation(fields: [userId], references: [userId])
+
+  @@index([userId])
+}
+
+enum SwipeDirection {
+  like
+  pass
+  superlike
+}
+
+enum MatchStatus {
+  active
+  expired
+  archived
+  unmatched
+}
+
+model Match {
+  id             String      @id @default(uuid()) @db.Uuid
+  user1Id        String      @db.Uuid
+  user2Id        String      @db.Uuid
+  status         MatchStatus @default(active)
+  matchedAt      DateTime    @default(now())
+  expiresAt      DateTime
+  firstMessageAt DateTime?
+  lastMessageAt  DateTime?
+  messageCount   Int         @default(0)
+  createdAt      DateTime    @default(now())
+
+  @@index([user1Id])
+  @@index([user2Id])
+  @@index([status])
+}
+
+model UserPreference {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @unique @db.Uuid
+  ageMin           Int      @default(18)
+  ageMax           Int      @default(60)
+  distanceMax      Int      @default(50)
+  genderPreference String[]
+  intentPreference String[]
+  dealbreakers     Json?
+  verifiedOnly     Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Swipe {
+  id        String         @id @default(uuid()) @db.Uuid
+  swiperId  String         @db.Uuid
+  swiper    User           @relation("SwipesMade", fields: [swiperId], references: [id], onDelete: Cascade)
+  swipedId  String         @db.Uuid
+  swiped    User           @relation("SwipesReceived", fields: [swipedId], references: [id], onDelete: Cascade)
+  direction SwipeDirection
+  context   String?
+  isMutual  Boolean        @default(false)
+  createdAt DateTime       @default(now())
+
+  @@unique([swiperId, swipedId])
+  @@index([swiperId])
+  @@index([swipedId])
+}
+
+model Block {
+  id        String   @id @default(uuid()) @db.Uuid
+  blockerId String   @db.Uuid
+  blockedId String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+}

@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "LUVARA",
+    "slug": "luvara",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.luvara.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "LUVARA uses your camera for photo verification and video intros.",
+        "NSPhotoLibraryUsageDescription": "LUVARA needs access to your photo library to upload profile photos.",
+        "NSMicrophoneUsageDescription": "LUVARA uses your microphone for voice intros."
+      }
+    },
+    "android": {
+      "package": "com.luvara.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-image-picker"
+    ]
+  }
+}

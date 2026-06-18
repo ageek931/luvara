@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  displayName  String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  matchesAsUser1 Match[] @relation("MatchesAsUser1")
+  matchesAsUser2 Match[] @relation("MatchesAsUser2")
+
+  @@index([email])
+}
+
+enum MatchStatus {
+  active
+  expired
+  unmatched
+  archived
+}
+
+model Match {
+  id             String      @id @default(uuid()) @db.Uuid
+  user1Id        String      @db.Uuid
+  user1          User        @relation("MatchesAsUser1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2Id        String      @db.Uuid
+  user2          User        @relation("MatchesAsUser2", fields: [user2Id], references: [id], onDelete: Cascade)
+  status         MatchStatus @default(active)
+  matchedAt      DateTime    @default(now())
+  expiresAt      DateTime
+  firstMessageAt DateTime?
+  lastMessageAt  DateTime?
+  messageCount   Int         @default(0)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@unique([user1Id, user2Id])
+  @@index([user1Id])
+  @@index([user2Id])
+  @@index([status])
+  @@index([expiresAt])
+}

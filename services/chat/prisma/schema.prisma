@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  displayName  String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  @@index([email])
+}
+
+model Conversation {
+  id             String    @id @default(uuid()) @db.Uuid
+  matchId        String    @unique @db.Uuid
+  lastMessageAt  DateTime?
+  messageCount   Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  messages Message[]
+
+  @@index([matchId])
+}
+
+model Message {
+  id               String    @id @default(uuid()) @db.Uuid
+  conversationId   String    @db.Uuid
+  conversation     Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId         String    @db.Uuid
+  sender           User      @relation(fields: [senderId], references: [id])
+  content          String    @db.Text
+  contentType      String    @default("text")
+  moderationStatus String    @default("approved")
+  readAt           DateTime?
+  createdAt        DateTime  @default(now())
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+}

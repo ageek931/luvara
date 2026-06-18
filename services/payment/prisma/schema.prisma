@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  displayName  String
+  stripeCustomerId String? @unique
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  subscriptions Subscription[]
+  payments      Payment[]
+
+  @@index([email])
+}
+
+enum BillingPeriod {
+  monthly
+  annual
+  quarterly
+}
+
+model Plan {
+  id            String        @id @default(uuid()) @db.Uuid
+  name          String
+  tier          String
+  billingPeriod BillingPeriod
+  priceCents    Int
+  currency      String        @default("usd")
+  features      Json?
+  stripePriceId String?
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  subscriptions Subscription[]
+
+  @@unique([tier, billingPeriod])
+}
+
+enum SubscriptionStatus {
+  active
+  trialing
+  past_due
+  canceled
+  expired
+}
+
+model Subscription {
+  id                  String             @id @default(uuid()) @db.Uuid
+  userId              String             @db.Uuid
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId              String             @db.Uuid
+  plan                Plan               @relation(fields: [planId], references: [id])
+  stripeSubscriptionId String?           @unique
+  status              SubscriptionStatus
+  currentPeriodStart  DateTime
+  currentPeriodEnd    DateTime
+  trialEnd            DateTime?
+  canceledAt          DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Payment {
+  id                    String   @id @default(uuid()) @db.Uuid
+  userId                String   @db.Uuid
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripePaymentIntentId String?  @unique
+  stripeInvoiceId       String?
+  amountCents           Int
+  currency              String   @default("usd")
+  status                String
+  planId                String?
+  createdAt             DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
